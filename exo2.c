@@ -12,7 +12,14 @@ int get_file_size(int file_descriptor){
     }
     return stat_struct.st_size;
 }
-
+int map_file(char** mapped_file, int file_descriptor, int file_size){
+    *mapped_file = mmap(NULL, file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, file_descriptor, 0);
+    if (mapped_file == MAP_FAILED){
+        perror("mmap");
+        return STD_FUNC_ERROR;
+    }
+    return 0;
+}
 
 
 int main(){
@@ -28,7 +35,13 @@ int main(){
         close(file_descriptor);
         return EXIT_FAILURE;
     }
-    else printf("File size: %d bytes\n", file_size);
+    printf("File size: %d bytes\n", file_size);
+    char *mapped_file;
+    if (map_file(&mapped_file, file_descriptor, file_size) == STD_FUNC_ERROR){
+        close(file_descriptor);
+        return EXIT_FAILURE;
+    }
+    printf("Mapped file content:\n%s\n", mapped_file);
 
     return EXIT_SUCCESS;
 }
