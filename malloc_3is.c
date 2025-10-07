@@ -48,6 +48,7 @@ void *create_memory_struct(size_t size)
     size_t memory_struct_size;
     void *memory_struct_start_addr;
     void *memory_block_start_addr;
+    long *magic_ptr;
     memory_struct_size = size + sizeof(HEADER);
     memory_struct_start_addr = sbrk(memory_struct_size);
     if (memory_struct_start_addr == (void *)-1)
@@ -59,6 +60,8 @@ void *create_memory_struct(size_t size)
     new_header->bloc_size = size;
     new_header->magic_number = MAGIC_NUMBER;
     memory_block_start_addr = (void *)(new_header + 1);
+    magic_ptr = (long *)memory_block_start_addr;
+    *magic_ptr = MAGIC_NUMBER;
     return memory_block_start_addr;
 }
 
