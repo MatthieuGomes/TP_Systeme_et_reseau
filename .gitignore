@@ -1,4 +1,5 @@
 .vscode
 exo[0-9]*
 !*.c
+malloc_3is
 temp
