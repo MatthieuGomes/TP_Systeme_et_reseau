@@ -9,7 +9,7 @@ typedef struct HEADER_TAG
     long magic_number;           /* 0x0123456789ABCDEFL */
 } HEADER;
 
-void header_to_string(HEADER *header_ptr){
+void print_header(HEADER *header_ptr){
     if(header_ptr == NULL){
         printf("header_ptr = NULL\n");
         return;
@@ -34,7 +34,7 @@ void print_free_memory_struct_list(void)
     while (current != NULL)
     {
         printf("----\n");
-        header_to_string(current);
+        print_header(current);
         printf("----\n");
         current = current->ptr_next;
     }
