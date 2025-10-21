@@ -1,5 +1,9 @@
 .vscode
 exo[0-9]*
 !*.c
+hello
+hello_ll
+null
 malloc_3is
 temp
+TP3
