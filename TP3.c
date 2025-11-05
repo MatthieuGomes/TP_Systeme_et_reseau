@@ -1,9 +1,16 @@
+#define FUSE_USE_VERSION 26
+
+#include </usr/include/fuse/fuse_lowlevel.h>
+#include </usr/include/asm-generic/errno-base.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include </usr/include/linux/stat.h> 
+#include </usr/include/sys/stat.h> 
 #include "Ressoures_FS-20251021/tosfs.h"
+
 
 #define path "Ressoures_FS-20251021/test_tosfs_files"
 #define N (TOSFS_BLOCK_SIZE * 32)
@@ -51,7 +58,74 @@ void printDentryInfo(tosfs_dentry * dentryTable) {
     }
 }
 
-int main()
+static int tofsStat(fuse_ino_t ino, struct stat *stbuf)
+{
+	stbuf->st_ino = ino;
+	switch (ino) {
+	case 1:
+		stbuf->st_mode = S_IFDIR | 0755;
+		stbuf->st_nlink = 2;
+		break;
+
+	case 2:
+		stbuf->st_mode = S_IFREG | 0444;
+		stbuf->st_nlink = 1;
+		stbuf->st_size = strlen(hello_str);
+		break;
+
+	default:
+		return -1;
+	}
+	return 0;
+}
+
+int static tofsGetAttr(fuse_req_t req, fuse_ino_t ino, struct fuse_file_info *fi) {
+    struct stat stbuf;
+
+    (void) fi;
+
+    memset(&stbuf, 0, sizeof(stbuf));
+    if (tofsStat(ino, &stbuf) == -1)
+        fuse_reply_err(req, ENOENT);
+    else
+        fuse_reply_attr(req, &stbuf, 1.0);
+}
+
+static struct fuse_lowlevel_ops tofsOps = {
+	.getattr	= tofsGetAttr,
+};
+
+int tofsMain(int argc, char *argv[])
+{
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	struct fuse_chan *ch;
+	char *mountpoint;
+	int err = -1;
+
+	if (fuse_parse_cmdline(&args, &mountpoint, NULL, NULL) != -1 &&
+	    (ch = fuse_mount(mountpoint, &args)) != NULL) {
+		struct fuse_session *se;
+
+		se = fuse_lowlevel_new(&args, &tofsOps,
+				       sizeof(tofsOps), NULL);
+		if (se != NULL) {
+			if (fuse_set_signal_handlers(se) != -1) {
+				fuse_session_add_chan(se, ch);
+				err = fuse_session_loop(se);
+				fuse_remove_signal_handlers(se);
+				fuse_session_remove_chan(ch);
+			}
+			fuse_session_destroy(se);
+		}
+		fuse_unmount(mountpoint, ch);
+	}
+	fuse_opt_free_args(&args);
+
+	return err ? 1 : 0;
+}
+
+
+int main(int argc, char *argv[])
 {
     int fd = open(path, O_RDONLY);
 
@@ -89,5 +163,6 @@ int main()
         exit(EXIT_FAILURE);
     }
     munmap(mMappedTestTosfs, N);
+    tofsMain(argc, argv);
     return EXIT_SUCCESS;
 }
